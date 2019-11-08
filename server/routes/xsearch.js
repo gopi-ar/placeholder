@@ -166,9 +166,12 @@ module.exports = function( req, res ){
       if (rows && rows.length > 0) {
         if (countryCode.length === 2) {
           let matches = rows.map((row) => _.compact(_.uniq([row.placename, row.admin3name, row.admin2name, row.admin1name])).join(' '));
+          postalCodeExpansion = matches.shift(); // Picking up first result
+          /*
           postalCodeExpansion = matches.map((v) => {
             return { v: v, d: sift4Distance(text, v) };
           }).sort((a, b) => (a.d < b.d) ? -1 : (a.d > b.d) ? 1 : 0).shift().v;
+          */
         } else if (rows.length === 1) {
           // Pick match only if matches are from a single country
           let row = rows[0];
