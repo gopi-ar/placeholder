@@ -91,6 +91,7 @@ app.use((req, res, next) => {
 });
 
 // routes
+app.get( '/parser/xsearch', require( './routes/xsearch' ) );
 app.get( '/parser/search', require( './routes/search' ) );
 app.get( '/parser/findbyid', require( './routes/findbyid' ) );
 app.get( '/parser/query', require( './routes/query' ) );
