@@ -39,9 +39,9 @@ Placeholder runs dozens (or hundreds) of database queries for full text searches
 
 This significantly improves performance for longer addresses / complex searches.
 
-These optimization changes are also in this pull request: https://github.com/pelias/placeholder/pull/163
+**These optimization [changes are also in this pull request](https://github.com/pelias/placeholder/pull/163).**
 
-### A new xsearch endpoint
+### A new `/xsearch` endpoint
 
 All the new features are exposed only through a new `/parser/xsearch` endpoint. Existing Placeholder routes won't have these new features - and continue working as-is.
 
@@ -52,10 +52,10 @@ All the new features are exposed only through a new `/parser/xsearch` endpoint. 
 
 ### Postal Code expansion
 
-* Postal codes are expanded to proper admin names using (Geonames Postal Code)[https://download.geonames.org/export/zip] data.
+* Postal codes are expanded to proper admin names using [Geonames Postal Code](https://download.geonames.org/export/zip) data.
 * This improves accuracy and coverage significantly.
 * Works only for structured input. Can't reliably detect postal codes in unstructured input.
-* When there are multiple matches for a given postal code, we compare user's input to postal code expansions, and pick best by  (sift4 string distance algorithm)[https://github.com/mailcheck/mailcheck/blob/master/src/mailcheck.js#L138].
+* When there are multiple matches for a given postal code, we compare user's input to postal code expansions, and pick best by  [sift4 string distance algorithm](https://github.com/mailcheck/mailcheck/blob/master/src/mailcheck.js#L138).
 
 ### Reverse Geocoding - get place names from longitude / latitude
 
@@ -97,7 +97,7 @@ There are quite a few steps to getting this to work! Code is in Node.js, DB is S
 
 But the core work is setting up the data.
 
-* First, make sure Placeholder(https://github.com/pelias/pelias) is setup.
+* First, make sure [Placeholder](https://github.com/pelias/pelias) is setup.
 * Follow Placeholder instructions to download / setup the `store.sqlite`
 * We need to add `countrycodes`, `iso3166`, `iso3166_2` and `postalcodes` tables to the same db.
 
@@ -145,7 +145,7 @@ update postalcodes set accuracy = 6 where country = 'NL';
 ```
 
 * Imported postal codes for Brazil. 
-    * Downloaded from http://cep.la/baixar
+    * Downloaded from [CEP](http://cep.la/baixar)
     * `grep "000\t" ceps.txt | cut -f1 -f2 -s > major-two.txt`
     * Edit file in text-editor. 
     * Add headers - country, postalcode, placename, admin1name, admin2name
@@ -178,7 +178,7 @@ CREATE INDEX "postalcode_idx" ON "postalcodes" (
 
 ### iso3166 and iso3166_2 tables
 
-* iso3166 (data from @lukes on GitHub)[https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv]
+* iso3166 [data from @lukes on GitHub](https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv)
 * Remove extra fields and change field names - headings. Then import to DB such that structure is like following:
 ```sql
 CREATE TABLE "iso3166" (
@@ -189,7 +189,7 @@ CREATE TABLE "iso3166" (
 )
 ```
 
-* iso3166_2 (data from ip2location)[https://www.ip2location.com/free/iso3166-2]. Download their CSV and import as a new table.
+* iso3166_2 [data from ip2location](https://www.ip2location.com/free/iso3166-2). Download their CSV and import as a new table.
 ```sql
 .mode csv
 .separator ","
