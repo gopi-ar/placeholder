@@ -55,7 +55,8 @@ All the new features are exposed only through a new `/parser/xsearch` endpoint. 
 * Postal codes are expanded to proper admin names using [Geonames Postal Code](https://download.geonames.org/export/zip) data.
 * This improves accuracy and coverage significantly.
 * Works only for structured input. Can't reliably detect postal codes in unstructured input.
-* When there are multiple matches for a given postal code, we compare user's input to postal code expansions, and pick best by  [sift4 string distance algorithm](https://github.com/mailcheck/mailcheck/blob/master/src/mailcheck.js#L138).
+* If no country code is given, search the system and expand if only one matching postal code found.
+* When there are multiple matches for a given postal code in given country, we just pick the first one.
 
 ### Reverse Geocoding - get place names from longitude / latitude
 

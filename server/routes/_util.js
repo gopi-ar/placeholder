@@ -21,9 +21,9 @@ function arrayParam( param ){
 **/
 function sortingAlgorithm( a, b ){
 
-  // condition 1 - population
-  const a1 = a.population || 0;
-  const b1 = b.population || 0;
+  // condition 1 - population or popularity
+  const a1 = a.population || a.popularity || 0;
+  const b1 = b.population || b.popularity || 0;
 
   // condition 2 - geom.area
   const a2 = a.geom && a.geom.area || 0;
