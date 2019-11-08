@@ -1,16 +1,15 @@
->This repository is part of the [Pelias](https://github.com/pelias/pelias)
->project. Pelias is an open-source, open-data geocoder originally sponsored by
->[Mapzen](https://www.mapzen.com/). Our official user documentation is
->[here](https://github.com/pelias/documentation).
+>This is a fork of [Pelias Placeholder](https://github.com/pelias/placeholder)
+>Pelias Placeholder is an open-source, last-line parser for unstructured geo text.
 
-# Pelias Placeholder Service
-[![NPM](https://nodei.co/npm/pelias-placeholder.png?downloads=true&stars=true)](https://nodei.co/npm/pelias-placeholder)
-[![Build Status](https://travis-ci.org/pelias/placeholder.png?branch=master)](https://travis-ci.org/pelias/placeholder)
-[![Greenkeeper badge](https://badges.greenkeeper.io/pelias/placeholder.svg)](https://greenkeeper.io/)
+# Geocoding for structured and unstructured addresses
 
-## natural language parser for geographic text
+If you need "last-line" address parsing (up to neighbourhood / locality level, and not street level), this is the solution!
 
-This engine takes unstructured input text, such as 'Neutral Bay North Sydney New South Wales' and attempts to deduce the geographic area the user is referring to.
+## Pelias Placeholder: natural language parser for geographic text
+
+This work is based on Pelias Placeholder. 
+
+Placeholder takes unstructured input text, such as 'Neutral Bay North Sydney New South Wales' and attempts to deduce the geographic area the user is referring to.
 
 Human beings (familiar with Australian geography) are able to quickly scan the text and establish that there 3 distinct token groups: 'Neutral Bay', 'North Sydney' & 'New South Wales'.
 
@@ -30,335 +29,192 @@ The engine includes a rudimentary language detection algorithm which attempts to
 
 ---
 
-## requirements
+## What we've changed in Placeholder?
 
-Placeholder requires Node.js and SQLite
+Quite a few things:
 
-See [Pelias software requirements](https://github.com/pelias/documentation/blob/master/requirements.md) for required and recommended versions.
+### At least 30% faster
 
-## install
+Placeholder runs dozens (or hundreds) of database queries for full text searches. But this code runs only one.
 
-```bash
-$ git clone git@github.com:pelias/placeholder.git && cd placeholder
-$ npm install
-```
+This significantly improves performance for longer addresses / complex searches.
 
-### download the required database files
+**These optimization [changes are also in this pull request](https://github.com/pelias/placeholder/pull/163).**
 
-```bash
-$ mkdir data
-$ curl -s https://s3.amazonaws.com/pelias-data.nextzen.org/placeholder/store.sqlite3.gz | gunzip > data/store.sqlite3;
-```
+### A new `/xsearch` endpoint
 
-### confirm the build was successful
+All the new features are exposed only through a new `/parser/xsearch` endpoint. Existing Placeholder routes won't have these new features - and continue working as-is.
 
-```bash
-$ npm test
-```
+### Support for structured address input (in addition to unstructured)
 
-```bash
-$ npm run cli -- san fran
+* You can pass `country`, `state`, `postal_code`, `city` and `address` as separate inputs.
+* Engine automatically turns country and state ISO codes into full names before searching.
 
-> pelias-placeholder@1.0.0 cli
-> node cmd/cli.js "san" "fran"
+### Postal Code expansion
 
-san fran
+* Postal codes are expanded to proper admin names using [Geonames Postal Code](https://download.geonames.org/export/zip) data.
+* This improves accuracy and coverage significantly.
+* Works only for structured input. Can't reliably detect postal codes in unstructured input.
+* When there are multiple matches for a given postal code, we compare user's input to postal code expansions, and pick best by  [sift4 string distance algorithm](https://github.com/mailcheck/mailcheck/blob/master/src/mailcheck.js#L138).
 
-took: 3ms
- - 85922583	locality 	San Francisco
-```
+### Reverse Geocoding - get place names from longitude / latitude
 
----
+* Passing `lat` and `lon` will do reverse lookup and provide geocoded names for the enclosing place.
 
-## run server
+### Minimal output mode, Limiting number of results
 
-```bash
-$ PORT=6100 npm start;
-```
-
-### open browser
-
-the server should now be running and you should be able to access the http API:
-
-```bash
-http://localhost:6100/
-```
-
-try the following paths:
+* Adding `minimal=1` parameter will simplify and shorten the output. For example:
 
 ```javascript
-/demo
-/parser/search?text=london
-/parser/findbyid?ids=101748479
-/parser/query?text=london
-/parser/tokenize?text=sydney new south wales
+[
+    {
+        "id": 85688543,
+        "name": "New York",
+        "placetype": "region",
+        "lineage": [
+            "North America",
+            "United States",
+            "New York"
+        ],
+        "countryCode": "USA",
+        "lat": 43.408777,
+        "lon": -74.871618
+    }
+]
 ```
 
-### changing languages
+* Adding `limit=5` will only return the first five matches. Set limit to 1 if you are doing automatic geocoding in batches or for non-interactive use.
 
-the `/parser/search` endpoint accepts a `?lang=xxx` property which can be used to vary the language of data returned.
+### Country code in output. 
 
-for example, the following urls will return strings in Japanese / Russian where available:
-
-```javascript
-/parser/search?text=germany&lang=jpn
-/parser/search?text=germany&lang=rus
-```
-
-documents returned by `/parser/search` contain a boolean property named `languageDefaulted` which indicates if the service was able to find a translation in the language you request (false) or whether it returned the default language (true).
-
-The `/parser/findbyid` endpoint also accepts a `?lang=xxx` property which will return the selected lang if the translation exists and all translations otherwise.
-
-for example, the following url will return strings in French / Korean where available:
-
-```javascript
-/parser/findbyid?ids=85633147,102191581,85862899&lang=fra
-/parser/findbyid?ids=85633147,102191581,85862899&lang=kor
-```
-
-the demo is also able to serve responses in different languages by providing the language code in the URL anchor:
-
-```bash
-/demo#jpn
-/demo#chi
-/demo#eng
-/demo#fra
-... etc.
-```
-
-### filtering by placetype
-
-the `/parser/search` endpoint accepts a `?placetype=xxx` parameter which can be used to control the placetype of records which are returned.
-
-the API does not provide any performance benefits, it is simply a convenience API to filter by a whitelist.
-
-you may specify multiple placetypes using a comma to separate them, such as `?placetype=xxx,yyy`, these are matched as OR conditions. eg: (xxx OR yyy)
-
-for example:
-
-the query `search?text=luxemburg` will return results for the `country`, `region`, `locality` etc.
-
-you can use the placetype filter to control which records are returned:
-
-```
-# all matching results
-search?text=luxemburg
-
-# only return matching country records
-search?text=luxemburg&placetype=country
-
-# return matching country or region records
-search?text=luxemburg&placetype=country,region
-```
-
-### live mode (BETA)
-
-the `/parser/search` endpoint accepts a `?mode=live` parameter pair which can be used to enable an autocomplete-style API.
-
-in this mode the final token of each input text is considered as 'incomplete', meaning that the user has potentially only typed part of a token.
-
-this mode is currently in BETA, the interface and behaviour may change over time.
-
-### configuring the rtree threshold
-
-the default matching strategy uses the `lineage` table to ensure that token pairs represent a valid child->parent relationship. this ensures that queries like 'London France' do not match, because there is no entry in the lineage table linking those two places together.
-
-in some cases it's preferable to fall back to a matching strategy which considers geographically nearby places with a matching name, even if that relationship does not explicitly exist in the lineage table.
-
-for example, 'Basel France' will return 'Basel Switzerland'. this is useful for handling user input errors and errors and omissions from the lineage table.
-
-in the example above, 'Basel France' only matches because the bounding box of 'Basel' overlaps the bounding box of 'France' and no other valid entry for 'Basel France' exists.
-
-the definition of what is 'nearby' is configurable, the bbox for the minor term (left token) is expanded by a threshold (the threshold is added or subtracted to each of the bbox vertices).
-
-by default the threshold is set as `0.2` (degrees), any float value between 0 and 1 may be specified via the enviornment variable `RTREE_THRESHOLD`.
-
-a setting of less than 0 will disable the rtree functionality completely. disabling the rtree will result in nearby queries such as 'Basel France' returning 'France' instead of 'Basel Switzerland'.
+Since minimal output mode turns lineage into a simple ordered array of strings, we've added 3-letter abbreviation of the country to the output. This helps many geocoding needs.
 
 ---
 
-## run the interactive shell
+## Requirements
 
+There are quite a few steps to getting this to work! Code is in Node.js, DB is SQLite.
+
+But the core work is setting up the data.
+
+* First, make sure [Placeholder](https://github.com/pelias/pelias) is setup.
+* Follow Placeholder instructions to download / setup the `store.sqlite`
+* We need to add `countrycodes`, `iso3166`, `iso3166_2` and `postalcodes` tables to the same db.
+
+
+### postalcodes table
+* `postalcodes` is the Geonames Postal Code data. Downloaded as a CSV and then imported. 
+* Import command:
 ```bash
-$ npm run repl
-
-> pelias-placeholder@1.0.0 repl
-> node cmd/repl.js
-
-placeholder >
+$  sqlite3 store.sqlite3 
+.mode csv
+.separator "\t"
+.import "~/Downloads/geonames/postcodes-geonames-allCountries.txt" postalcodes
 ```
 
-try the following commands:
-
-```javascript
-placeholder > london on
- - 101735809	locality 	London
-
-placeholder > search london on
- - 101735809	locality 	London
-
-placeholder > tokenize sydney new south wales
- [ [ 'sydney', 'new south wales' ] ]
-
-placeholder > token kelburn
- [ 85772991 ]
-
-placeholder > id 85772991
- { name: 'Kelburn',
-   placetype: 'neighbourhood',
-   lineage:
-    { continent_id: 102191583,
-      country_id: 85633345,
-      county_id: 102079339,
-      locality_id: 101915529,
-      neighbourhood_id: 85772991,
-      region_id: 85687233 },
-   names: { eng: [ 'Kelburn' ] } }
+* Table structure will be:
+```sql
+CREATE TABLE "postalcodes" (
+	"country"	TEXT NOT NULL,
+	"postalcode"	TEXT,
+	"placename"	TEXT,
+	"admin1name"	TEXT,
+	"admin1code"	TEXT,
+	"admin2name"	TEXT,
+	"admin2code"	TEXT,
+	"admin3name"	TEXT,
+	"admin3code"	TEXT,
+	"latitude"	NUMERIC,
+	"longitude"	NUMERIC,
+	"accuracy"	INTEGER)
 ```
 
----
+* We also added the entire postal code data for Great Britain and Netherlands from Geonames.
 
-## configuration for pelias API
+```sql
+delete from postalcodes where country = 'GB' or country = 'NL';
 
-While Placeholder can be used as a stand-alone application or included with other geographic software / search engines, it is designed for the [Pelias geocoder](https://github.com/pelias/pelias).
+.mode csv
+.separator "\t"
+.import "~/Downloads/geonames/GB_full.txt" postalcodes
 
-To connect Placeholder service to the Pelias API, [configure the pelias config file](https://github.com/pelias/api#pelias-config) with the port that placeholder is running on.
-
----
-
-## tests
-
-### run the test suite
-
-```bash
-$ npm test
+.mode csv
+.separator "\t"
+.import "~/Downloads/geonames/NL_full.txt" postalcodes
+update postalcodes set accuracy = 6 where country = 'NL';
 ```
 
-### run the functional cases
+* Imported postal codes for Brazil. 
+    * Downloaded from [CEP](http://cep.la/baixar)
+    * `grep "000\t" ceps.txt | cut -f1 -f2 -s > major-two.txt`
+    * Edit file in text-editor. 
+    * Add headers - country, postalcode, placename, admin1name, admin2name
+    * Replace ( with tab
+    * Replace ) with nothing
+    * Replace / with tab
+    * Save as .csv
+    * Then import this into SQLite as a new table - `brazil_postcodes`
+    * Then run:
+        ```sql    
+        delete from postalcodes where country = 'BR';
+        insert into postalcodes (country, postalcode, placename, admin1name, admin2name, postalcode_cleaned)
+        select 'BR' as country, postal, placename, admin1, admin2, postal from brazil_postcodes;
+        drop table brazil_postcodes;
+        update postalcodes set postalcode = substr(postalcode, 0, 6) where country = 'BR';
+        ```
 
-there are more exhaustive test cases included in `test/cases/`.
+* Some additional steps...
 
-to run all the test cases:
+```sql
+alter table postalcodes ADD postalcode_cleaned text;
 
-```bash
-$ npm run funcs
+update postalcodes set postalcode_cleaned = upper( replace( replace(postalcode, '-', ''), ' ', ''));
+
+CREATE INDEX "postalcode_idx" ON "postalcodes" (
+    "country"    ASC,
+    "postalcode_cleaned"    ASC
+);
 ```
 
-### generate a ~500,000 line test file
+### iso3166 and iso3166_2 tables
 
-this command requires the `data/wof.extract` file mentioned below in the 'building the database' section.
-
-```bash
-$ npm run gentests
+* iso3166 [data from @lukes on GitHub](https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv)
+* Remove extra fields and change field names - headings. Then import to DB such that structure is like following:
+```sql
+CREATE TABLE "iso3166" (
+	"name"	TEXT,
+	"alpha2"	TEXT,
+	"alpha3"	TEXT,
+	"code"	INTEGER
+)
 ```
 
-once complete you can find the generated test cases in `test/cases/generated.txt`.
-
----
-
-## docker
-
-### build the service image
-
-```bash
-$ docker-compose build
+* iso3166_2 [data from ip2location](https://www.ip2location.com/free/iso3166-2). Download their CSV and import as a new table.
+```sql
+.mode csv
+.separator ","
+.import "~/Downloads/ip2location-iso3166-2/IP2LOCATION-ISO3166-2.CSV" iso3166_2;
+CREATE INDEX "iso3166_2_idx" ON "iso3166_2" ( "code"	ASC );
 ```
 
-### run the service in the background
+### countrycodes table
 
-```bash
-$ docker-compose up -d
+Extracting country codes from existing WOF data... (requires iso3166 table to be present)
+
+```sql
+create table countrycodes as
+    select  d.id as id, json_extract(d.json, "$.name") as name, json_extract(d.json, "$.abbr") as alpha3, i.alpha2 as alpha2
+  from docs d, iso3166 i
+  where
+  json_extract(json, "$.abbr") = i.alpha3
+  and json_extract(json, "$.placetype") in ("country", "empire", "dependency", "disputed");
+
+CREATE UNIQUE INDEX "countrycodes_idx" ON "countrycodes" (
+    "id"    ASC,
+    "alpha3"    ASC,
+    "alpha2"    ASC
+);
 ```
 
 ---
 
-## building the database
-
-### prerequisites
-- jq 1.5+ must be installed
-    - on ubuntu: `sudo apt-get install jq`
-    - on mac: `brew install jq`
-- Who's on First data download
-    - use the download script in [pelias/whosonfirst](https://github.com/pelias/whosonfirst#downloading-the-data)
-
-### steps
-the database is created from geographic data sourced from the [whosonfirst](https://whosonfirst.org/) project.
-
-the whosonfirst project is distributed as geojson files, so in order to speed up development we first extract the relevant data in to a file: `data/wof.extract`.
-
-the following command will iterate over all the `geojson` files under the `WOF_DIR` path, extracting the relevant properties in to the file `data/wof.extract`.
-
-this process can take 30-60 minutes to run and consumes ~350MB of disk space, you will only need to run this command once, or when your local `whosonfirst-data` files are updated.
-
-```bash
-$ WOF_DIR=/data/whosonfirst-data/data npm run extract
-```
-
-alternatively you can download the extract file from our s3 bucket:
-
-```bash
-$ mkdir data
-$ curl -s https://s3.amazonaws.com/pelias-data.nextzen.org/placeholder/wof.extract.gz | gunzip > data/wof.extract;
-```
-
-now you can rebuild the `data/store.json` file with the following command:
-
-this should take 2-3 minutes to run:
-
-```bash
-$ npm run build
-```
-
----
-
-## Using the Docker image
-
-### rebuild the image
-
-you can rebuild the image on any system with the following command:
-
-```bash
-$ docker build -t pelias/placeholder .
-```
-
-### download pre-built image
-
-Up to date Docker images are built and automatically pushed to Docker Hub from our continuous integration pipeline
-
-You can pull the latest stable image with
-
-```bash
-$ docker pull pelias/placeholder
-```
-
-### download custom image tags
-
-We publish each commit and the latest of each branch to separate tags
-
-A list of all available tags to download can be found at https://hub.docker.com/r/pelias/placeholder/tags/
-
----
-
-### uploading a new build to s3
-
-this section is applicable to Pelias maintainers only and requires s3 credentials and the `aws` command to be installed and configured prior to running.
-
-other organizations may elect to change the bucket name in the config and utilize the same script.
-
-the script takes care of creating a date stamped archive and promoting the most recent build to the root of the bucket (with a public ACL).
-
-```bash
-$ AWS_PROFILE=nextzen ./cmd/s3_upload.sh
-
---- gzipping data files ---
---- uploading archive ---
-upload: data/store.sqlite3.gz to s3://pelias-data.nextzen.org/placeholder/archive/2017-09-29/store.sqlite3.gz
-upload: data/wof.extract.gz to s3://pelias-data.nextzen.org/placeholder/archive/2017-09-29/wof.extract.gz
---- list remote archive ---
-2017-09-29 14:52:33   46.6 MiB store.sqlite3.gz
-2017-09-29 14:53:08   53.8 MiB wof.extract.gz
-
-> would you like to promote this build to production (yes/no)?
-no
-you did not answer yes, the build was not promoted to production
-```
