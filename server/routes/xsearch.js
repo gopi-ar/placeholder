@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const { arrayParam, sortingAlgorithm, mapResult, rowsToIdMap, getParentIds } = require('./_util');
 const debug = false;
+const PARTIAL_TOKEN_SUFFIX = require('../../lib/analysis').PARTIAL_TOKEN_SUFFIX;
 
 module.exports = function( req, res ){
 
@@ -16,6 +17,12 @@ module.exports = function( req, res ){
   params.map((p) => { 
     input[p] = (req.query[p] || '').replace(/[-֊־‐‑﹣\/\(\)\[\]]/g, ' ').replace(/['`‘“”’/]/g, '').trim();
   });
+
+  // live mode (autocomplete-style search)
+  if( req.query.mode === 'live' && input.text){
+    input.text += PARTIAL_TOKEN_SUFFIX;
+    input.limit = (input.limit > 0) ? input.limit : 5;
+  }
 
   // Get only one match - by default
   input.limit = (input.limit > 1) ? input.limit : 1;
