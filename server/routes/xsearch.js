@@ -28,9 +28,8 @@ module.exports = function( req, res ){
   input.limit = (input.limit > 1) ? input.limit : 1;
   input.minimal = (Number.parseInt(req.query.minimal) > 0) ? true : false;
 
-  // Build the search text
-  let text = input.text || '';
-  text += input.address + ' ' + input.city + ' ' + input.state;
+  // The search text
+  let text;
 
   // language property
   var lang;
@@ -221,6 +220,13 @@ module.exports = function( req, res ){
     }
   });
   
+  // Remove short tokens from address or text search strings - they are most likely from street addresses that we don't worry about
+  if (input.country || input.postal_code || input.state || input.city) {
+    ['text', 'address'].map(k => {
+      input[k] = input[k].replace(/(\b(\w{1,2})\b(\W|$))/g, '');
+    });
+  }
+
   // Re-Build the search text after all corrections we may have done
   text = [input.text, input.address, input.city, input.state, input.postal_code, input.country].join(' ');
   
