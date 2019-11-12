@@ -1,12 +1,13 @@
 {
-  "name": "pelias-placeholder",
-  "version": "0.0.0-development",
+  "name": "placeholder",
+  "version": "0.1.1",
   "engines": {
     "node": ">=8.0.0"
   },
   "author": "mapzen",
+  "contributors": [ {"name": "Putler", "url": "https://www.putler.com/"} ],
   "license": "MIT",
-  "main": "server.js",
+  "main": "Placeholder.js",
   "scripts": {
     "test": "npm run units",
     "units": "./cmd/units",
@@ -26,12 +27,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pelias/placeholder.git"
+    "url": "https://github.com/niravmehta/placeholder.git"
   },
   "bugs": {
-    "url": "https://github.com/pelias/placeholder/issues"
+    "url": "https://github.com/niravmehta/placeholder/issues"
   },
-  "homepage": "https://github.com/pelias/placeholder#readme",
+  "homepage": "https://github.com/niravmehta/placeholder",
   "dependencies": {
     "async": "^3.0.1",
     "better-sqlite3": "^5.0.0",
