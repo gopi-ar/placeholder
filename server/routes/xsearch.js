@@ -223,8 +223,8 @@ module.exports = function( req, res ){
   // Remove short tokens from address or text search strings - they are most likely from street addresses that we don't worry about
   if (input.country || input.postal_code || input.state || input.city) {
     ['text', 'address'].map(k => {
-      input[k] = input[k].replace(/(\b(\w{1,2})\b(\W|$))/g, '')
-    })
+      input[k] = input[k].replace(/(\b(\w{1,2})\b(\W|$))/g, '');
+    });
   }
 
   // Re-Build the search text after all corrections we may have done
