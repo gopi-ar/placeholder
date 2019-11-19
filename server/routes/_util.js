@@ -38,12 +38,28 @@ function sortingAlgorithm( a, b ){
 
 function mapResult( ph, result, parents, lang ){
 
-  // swap languages
-  if( Array.isArray( result.names[lang] ) && result.names[lang].length ){
+  // If we need names in a particular language, check if we have it, if so, use it
+  if( result.names && Array.isArray( result.names[lang] ) && result.names[lang].length && result.names[lang][0]){
     result.name = result.names[lang][0];
-    result.languageDefaulted = false;
-  } else {
-    result.languageDefaulted = true;
+  }
+
+  // Pick name from any other language if not set
+  if (!result.name && result.names) {
+    let availableName;
+    for (let l in result.names) {
+      if (Array.isArray(result.names[l]) && result.names[l].length > 0) {
+        availableName = result.names[l].reduce((an, cn) => an ? an : cn);
+      }
+      if (availableName) {
+        result.name = availableName;
+        break;
+      }
+    }
+  }
+
+  // Set the name back in the parents too if we changed it..
+  if (parents[result.id]) {
+    parents[result.id].name = result.name;
   }
 
   // delete language properties
@@ -68,21 +84,18 @@ function mapLineage( ph, lineage, parents, lang ){
       console.error( 'parent not found!', attr, lineage[ attr ] );
       continue;
     }
-
+    
     var name = parent.name;
-    var languageDefaulted = true;
 
     // swap languages
-    if( Array.isArray( parent.names[lang] ) && parent.names[lang].length ){
-      languageDefaulted = false;
+    if( Array.isArray( parent.names[lang] ) && parent.names[lang].length && parent.names[lang][0]){
       name = parent.names[lang][0];
     }
 
     res[ parent.placetype ] = {
       id: parent.id,
       name: name,
-      abbr: parent.abbr,
-      languageDefaulted: languageDefaulted
+      abbr: parent.abbr
     };
   }
 
