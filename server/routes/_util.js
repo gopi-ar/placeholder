@@ -41,7 +41,11 @@ function mapResult( ph, result, parents, lang ){
   // If we need names in a particular language, check if we have it, if so, use it
   if( result.names && Array.isArray( result.names[lang] ) && result.names[lang].length && result.names[lang][0]){
     result.name = result.names[lang][0];
+    result.languageDefaulted = false;
+  } else {
+    result.languageDefaulted = true;
   }
+    
 
   // Pick name from any other language if not set
   if (!result.name && result.names) {
@@ -86,15 +90,18 @@ function mapLineage( ph, lineage, parents, lang ){
     }
     
     var name = parent.name;
+    var languageDefaulted = true;
 
     // swap languages
-    if( Array.isArray( parent.names[lang] ) && parent.names[lang].length && parent.names[lang][0]){
+    if (Array.isArray(parent.names[lang]) && parent.names[lang].length && parent.names[lang][0]) {
+      languageDefaulted = false;
       name = parent.names[lang][0];
     }
 
     res[ parent.placetype ] = {
       id: parent.id,
       name: name,
+      languageDefaulted: languageDefaulted,
       abbr: parent.abbr
     };
   }
