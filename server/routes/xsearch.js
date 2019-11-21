@@ -272,7 +272,7 @@ function hydrateResults(ids, ph, opts, cb) {
     ph.store.getMany(parentIds, (err, parentResults) => {
 
       // a database error occurred
-      if (err) { return cb(err, []); }
+      if (err && debug) { return cb(err, []); }
 
       // handle case where the database was unable to return any rows
       parentResults = parentResults || [];
@@ -401,6 +401,7 @@ function isValidLatLon(lat, lon) {
 }
 
 function minimizeResult(result) {
+  if (!result.name) { result.name = ''; }
   if (result.population) { delete result.population; }
   if (result.abbr) { delete result.abbr; }
   if (result.languageDefaulted) { delete result.languageDefaulted; }
@@ -419,7 +420,7 @@ function minimizeResult(result) {
     order.forEach( function( type ){
       if (lineage.hasOwnProperty(type)) {
         let d = lineage[type];
-        if (l.length === 0 || l[l.length - 1] !== d.name) {
+        if (d.name && (l.length === 0 || l[l.length - 1] !== d.name)) {
           l.push(d.name);
         }
         if (type === 'country') {
