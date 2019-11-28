@@ -30,6 +30,7 @@ module.exports = function( req, res ){
 
   // The search text
   let text;
+  let matchedCountry;
 
   // language property
   var lang;
@@ -52,7 +53,7 @@ module.exports = function( req, res ){
     try {
       let row = stmt.get({ lon: input.lon, lat: input.lat });
       if (row) {
-        return hydrateResults([row.id], ph, { filter, input, lang }, (err, docs) => {
+        return hydrateResults([row.id], ph, { filter, input, lang, matchedCountry }, (err, docs) => {
           if (err) {
             return res.status(500).send(err);
           }
@@ -108,6 +109,7 @@ module.exports = function( req, res ){
           country = row.name;
           countryCode = row.alpha2;
           input.country = country;
+          matchedCountry = { id: row.id, name: country, abbr: row.alpha3, languageDefaulted: true };
         } else {
           // Bad country!!
           input.country = country = countryCode = '';
@@ -236,7 +238,7 @@ module.exports = function( req, res ){
   if (debug) { console.time('took'); }
   ph.query( text, ( err, result ) => {
     if (debug) { console.timeEnd('took'); }
-    return hydrateResults(result.getIdsAsArray(), ph, { filter, input, lang }, (err, docs) => {
+    return hydrateResults(result.getIdsAsArray(), ph, { filter, input, lang, matchedCountry }, (err, docs) => {
       if (err) {
         return res.status(500).send(err);
       }
@@ -248,7 +250,7 @@ module.exports = function( req, res ){
 
 // Function to take document IDs and return results
 function hydrateResults(ids, ph, opts, cb) {
-  let { filter, input, lang } = opts;
+  let { filter, input, lang, matchedCountry } = opts;
   if (debug) { console.error('Processing docs: ', ids); }
   // fetch all result docs by id
   ph.store.getMany(ids, function (err, documents) {
@@ -284,6 +286,16 @@ function hydrateResults(ids, ph, opts, cb) {
       let docs = documents.map(function (result) {
         return mapResult(ph, result, parents, lang);
       });
+
+      // This fixes missing country / parent problem
+      if (matchedCountry) {
+        docs = docs.map(function (doc) {
+          if (doc.lineage && doc.lineage[0] && !doc.lineage[0].country) {
+            doc.lineage[0].country = matchedCountry;
+          }
+          return doc;
+        });
+      }
 
       // If minimal result, strip down result
       if (input.minimal === true) {
@@ -402,9 +414,12 @@ function isValidLatLon(lat, lon) {
 
 function minimizeResult(result) {
   if (!result.name) { result.name = ''; }
-  if (result.population) { delete result.population; }
-  if (result.abbr) { delete result.abbr; }
-  if (result.languageDefaulted) { delete result.languageDefaulted; }
+  let fieldsToRemove = ['population', 'abbr', 'languageDefaulted', 'popularity'];
+  fieldsToRemove.forEach(function (key) {
+    if (result[key]) {
+      delete result[key];
+    }
+  });
 
   // pick a single lineage, order it and turn it into an array of placenames
   var order = [
