@@ -21,8 +21,10 @@ module.exports.reset = function(test, common) {
     // ensure table has been created
     const sql = 'PRAGMA table_info(docs)';
     t.deepEqual( db.prepare(sql).all(), [
-      { cid: 0, name: 'id', type: 'INTEGER', notnull: 0, dflt_value: null, pk: 1 },
-      { cid: 1, name: 'json', type: 'TEXT', notnull: 0, dflt_value: null, pk: 0 }
+    { cid: 0, name: 'id', type: 'INTEGER', notnull: 0, dflt_value: null, pk: 1 },
+    { cid: 1, name: 'json', type: 'TEXT', notnull: 0, dflt_value: null, pk: 0 },
+    { cid: 2, name: 'population', type: 'numeric', notnull: 0, dflt_value: '0', pk: 0 },
+    { cid: 3, name: 'area', type: 'numeric', notnull: 0, dflt_value: '0', pk: 0 }
     ]);
     
     t.end();
@@ -67,7 +69,7 @@ module.exports.set = function(test, common) {
       // ensure row has been created
       const sql = 'SELECT * FROM docs WHERE id = ? LIMIT 1';
       t.deepEqual( db.prepare(sql).all(id), [
-        { id: id, json: DocStore.codec.encode( data ) }
+        { id: id, json: DocStore.codec.encode( data ), population: 0, area: 0 }
       ]);
 
     });

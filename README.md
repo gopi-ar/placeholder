@@ -172,10 +172,13 @@ alter table postalcodes ADD postalcode_cleaned text;
 update postalcodes set postalcode_cleaned = upper( replace( replace(postalcode, '-', ''), ' ', ''));
 
 CREATE INDEX "postalcode_idx" ON "postalcodes" (
-    "country"    ASC,
-    "postalcode_cleaned"    ASC
-);
-```
+	"country"	ASC,
+	"postalcode_cleaned"	ASC,
+	"admin1name"	ASC,
+	"admin1code"	ASC,
+	"admin2name"	ASC,
+	"admin2code"	ASC
+);```
 
 ### iso3166 and iso3166_2 tables
 
@@ -219,3 +222,32 @@ CREATE UNIQUE INDEX "countrycodes_idx" ON "countrycodes" (
 
 ---
 
+### Additional DB optimizations
+
+- Enable WAL mode for concurrency and faster performance
+
+- Index on token, lang and id because that's the data we used most often
+```
+CREATE INDEX tokens_id_lang_token_idx ON tokens(id, lang, token);
+```
+
+alter table docs 
+add column population numeric default 0;
+
+alter table docs 
+add column area numeric default 0; 
+
+update docs set 
+	population = CASE 
+		WHEN json_extract(json, "$.population") > 0 THEN json_extract(json, "$.population") 
+		WHEN json_extract(json, "$.popularity") > 0 THEN json_extract(json, "$.popularity") 
+		ELSE 0 END, 
+	area = CASE 
+		WHEN json_extract(json, "$.geom.area") > 0 THEN json_extract(json, "$.geom.area") 
+		ELSE 0 END;
+	
+CREATE INDEX "docs_sorting_idx" ON "docs" (
+	"id"	ASC,
+	"population"	DESC,
+	"area"	DESC
+);

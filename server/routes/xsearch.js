@@ -253,10 +253,14 @@ function hydrateResults(ids, ph, opts, cb) {
   let { filter, input, lang, matchedCountry } = opts;
   if (debug) { console.error('Processing docs: ', ids); }
   // fetch all result docs by id
-  ph.store.getMany(ids, function (err, documents) {
+  ph.store.getFew(ids, {limit: input.limit, placetype: filter.placetype}, function (err, documents) {
     if (err) { return cb( err, []); }
     if (!documents || !documents.length) { return cb( null, []); }
 
+    /* We moved the placetype filter, limit and sorting functionality to DB query level
+       so no need to do it in code here...
+    */
+    /*
     // placetype filter
     if (Array.isArray(filter.placetype) && filter.placetype.length) {
       documents = documents.filter(d => _.includes(filter.placetype, d.placetype));
@@ -267,6 +271,8 @@ function hydrateResults(ids, ph, opts, cb) {
 
     // Limit results count
     documents = documents.slice(0, input.limit);
+    */
+    
     // get a list of parent ids
     const parentIds = getParentIds(documents);
 

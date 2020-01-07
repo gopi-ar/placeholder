@@ -2,10 +2,15 @@
   "name": "placeholder",
   "version": "0.1.1",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=10.0.0"
   },
   "author": "mapzen",
-  "contributors": [ {"name": "Putler", "url": "https://www.putler.com/"} ],
+  "contributors": [
+    {
+      "name": "Putler",
+      "url": "https://www.putler.com/"
+    }
+  ],
   "license": "MIT",
   "main": "Placeholder.js",
   "scripts": {
@@ -38,7 +43,7 @@
     "better-sqlite3": "^5.0.0",
     "express": "^4.15.2",
     "lodash": "^4.17.4",
-    "lower-case": "^1.1.4",
+    "lower-case": "^2.0.0",
     "morgan": "^1.9.0",
     "pelias-blacklist-stream": "^1.1.0",
     "pelias-logger": "^1.2.1",
@@ -53,7 +58,7 @@
     "jshint": "^2.5.6",
     "precommit-hook": "^3.0.0",
     "tap-spec": "^5.0.0",
-    "tape": "^4.8.0"
+    "tape": "^4.12.1"
   },
   "pre-commit": [
     "lint",
