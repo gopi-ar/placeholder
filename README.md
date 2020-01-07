@@ -227,9 +227,10 @@ CREATE UNIQUE INDEX "countrycodes_idx" ON "countrycodes" (
 - Enable WAL mode for concurrency and faster performance
 
 - Index on token, lang and id because that's the data we used most often
-```
+- Move out population and area fields to table level so we can quickly sort on them without json_extract
+
+```sql
 CREATE INDEX tokens_id_lang_token_idx ON tokens(id, lang, token);
-```
 
 alter table docs 
 add column population numeric default 0;
@@ -251,3 +252,4 @@ CREATE INDEX "docs_sorting_idx" ON "docs" (
 	"population"	DESC,
 	"area"	DESC
 );
+```
